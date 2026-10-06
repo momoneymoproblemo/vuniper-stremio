@@ -1,0 +1,27 @@
+{
+  "id": "community.vuniper",
+  "version": "1.0.0",
+  "name": "Vuniper",
+  "description": "Movies just released to digital and hidden gems, as listed on vuniper.com. Updates every 6 hours.",
+  "resources": [
+    "catalog"
+  ],
+  "types": [
+    "movie"
+  ],
+  "idPrefixes": [
+    "tt"
+  ],
+  "catalogs": [
+    {
+      "type": "movie",
+      "id": "vuniper-now-online",
+      "name": "Vuniper: Now Online"
+    },
+    {
+      "type": "movie",
+      "id": "vuniper-hidden-gems",
+      "name": "Vuniper: Hidden Gems"
+    }
+  ]
+}
