@@ -1,50 +1,56 @@
-// Pulls both Vuniper lists and writes a static Stremio add-on into docs/ (served by GitHub Pages).
+// Pulls every Vuniper list and writes a static Stremio add-on into docs/ (served by GitHub Pages).
 const fs = require('fs');
 const path = require('path');
-const { scrape } = require('./scraper');
+const { scrape, ROWS } = require('./scraper');
 
 const OUT = path.join(__dirname, 'docs');
-
-const ROWS = [
-  { id: 'vuniper-now-online', name: 'Vuniper: Now Online' },
-  { id: 'vuniper-hidden-gems', name: 'Vuniper: Hidden Gems' },
-];
+const BASE = 'https://momoneymoproblemo.github.io/vuniper-stremio';
+const PAGE_SIZE = 100; // Stremio asks for more with ?skip=100, 200...
 
 const manifest = {
   id: 'community.vuniper',
-  version: '1.0.1',
+  version: '2.0.0',
   name: 'Vuniper',
-  description: 'Movies just released to digital and hidden gems, as listed on vuniper.com. Updates every 6 hours.',
+  description:
+    'New movies and shows as tracked by vuniper.com: now online, hidden gems, upcoming, in theaters, popular and new on Blu-ray, plus new, upcoming and popular shows. Unofficial; updates every 6 hours.',
+  logo: `${BASE}/logo.png`,
+  background: `${BASE}/background.png`,
   resources: ['catalog'],
-  types: ['movie'],
+  types: ['movie', 'series'],
   idPrefixes: ['tt'],
-  catalogs: ROWS.map((r) => ({ type: 'movie', id: r.id, name: r.name })),
+  catalogs: ROWS.map((r) => ({ type: r.type, id: r.id, name: r.name, extra: [{ name: 'skip', isRequired: false }] })),
 };
 
 function write(rel, data) {
   const file = path.join(OUT, rel);
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+  fs.writeFileSync(file, JSON.stringify(data));
 }
 
 (async () => {
   write('manifest.json', manifest);
   const results = await scrape({ verbose: true });
-  let anyUpdated = false;
+  let updated = 0;
 
   for (const r of ROWS) {
     const metas = results[r.id] || [];
-    console.log(`\n${r.name}: ${metas.length} films`);
-    if (metas.length) {
-      write(`catalog/movie/${r.id}.json`, { metas });
-      anyUpdated = true;
-    } else {
+    console.log(`${r.name}: ${metas.length}`);
+    if (!metas.length) {
       console.log('  (nothing found — kept the previous list)');
+      continue;
     }
+    const dir = `catalog/${r.type}/${r.id}`;
+    // Clear old pages so a shorter list doesn't leave stale extras behind.
+    fs.rmSync(path.join(OUT, dir), { recursive: true, force: true });
+    write(`${dir}.json`, { metas: metas.slice(0, PAGE_SIZE) });
+    for (let skip = PAGE_SIZE; skip < metas.length; skip += PAGE_SIZE) {
+      write(`${dir}/skip=${skip}.json`, { metas: metas.slice(skip, skip + PAGE_SIZE) });
+    }
+    updated++;
   }
 
-  if (!anyUpdated) {
-    console.error('\nNo films found for either row. Vuniper may have changed its feed.');
+  if (!updated) {
+    console.error('\nNo titles found for any row. Vuniper may have changed its feed.');
     process.exitCode = 1;
   }
 })();

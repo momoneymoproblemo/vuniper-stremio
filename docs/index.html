@@ -4,41 +4,170 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vuniper for Stremio</title>
+<meta name="description" content="Unofficial Stremio add-on bringing Vuniper's new movie and show lists into Stremio.">
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0f0e17; --card:#1b1a27; --text:#f2f0ff; --muted:#a29fbd; --accent:#8a5cf6; }
+  :root {
+    --bg: #161616;
+    --panel: #1e1e1e;
+    --line: #2c2c2c;
+    --text: #fafafa;
+    --muted: #a3a3a3;
+    --pink: #dc6ef8;
+    --glow: 0 0 5px rgba(243,45,228,.5), 0 0 10px rgba(239,62,234,.3), 0 0 15px rgba(255,0,212,.2), 0 0 20px rgba(251,0,255,.1);
+  }
   * { box-sizing: border-box; }
-  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--text);
-         font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; padding:24px 16px; }
-  main { width:100%; max-width:420px; background:var(--card); border-radius:20px; padding:32px 24px; text-align:center; }
-  h1 { margin:0 0 6px; font-size:28px; letter-spacing:-0.02em; }
-  p { margin:0 0 20px; color:var(--muted); }
-  ul { list-style:none; padding:0; margin:0 0 28px; text-align:left; }
-  li { padding:12px 14px; background:#0001; border:1px solid #ffffff14; border-radius:12px; margin-bottom:8px; }
-  li b { display:block; } li span { color:var(--muted); font-size:14px; }
-  .btn { display:block; width:100%; padding:16px; border-radius:14px; background:var(--accent); color:#fff;
-         font-weight:700; font-size:18px; text-decoration:none; }
-  .small { margin:18px 0 0; font-size:13px; }
-  code { display:block; margin-top:8px; padding:10px; background:#0004; border-radius:8px; color:var(--text);
-         font-size:12px; word-break:break-all; user-select:all; }
+  html { background: var(--bg); }
+  body { margin: 0; color: var(--text); font: 16px/1.55 Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+         background:
+           radial-gradient(900px 500px at 85% -10%, rgba(150,30,160,.28), transparent 70%),
+           radial-gradient(700px 500px at -10% 110%, rgba(90,20,120,.25), transparent 70%),
+           var(--bg);
+         min-height: 100vh; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+  .neon { color: var(--pink); text-shadow: var(--glow); font-weight: 400; }
+
+  header.hero { padding: 56px 0 28px; display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; }
+  .hero img { width: 120px; height: 120px; border-radius: 28px; filter: drop-shadow(0 0 24px rgba(243,45,228,.35)); }
+  .hero h1 { margin: 0; font-size: clamp(34px, 6vw, 52px); line-height: 1.05; letter-spacing: -0.01em; }
+  .hero p { margin: 10px 0 0; color: var(--muted); max-width: 560px; }
+
+  .install { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin: 8px 0 8px; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 26px; border-radius: 12px;
+         background: var(--pink); color: #160018; font-weight: 700; font-size: 17px; text-decoration: none;
+         box-shadow: 0 0 18px rgba(243,45,228,.45), 0 0 40px rgba(243,45,228,.2); transition: transform .15s, box-shadow .15s; }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(243,45,228,.6), 0 0 60px rgba(243,45,228,.3); }
+  .btn svg { width: 18px; height: 18px; }
+  .manual { color: var(--muted); font-size: 14px; }
+  .copy { display: flex; gap: 8px; margin-top: 10px; max-width: 640px; }
+  .copy code { flex: 1; min-width: 0; padding: 11px 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line);
+               font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); overflow-x: auto; white-space: nowrap; }
+  .copy button { padding: 0 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--text);
+                 font: 600 14px Inter, system-ui, sans-serif; cursor: pointer; }
+  .copy button:hover { border-color: var(--pink); color: var(--pink); }
+
+  .strip { display: flex; gap: 12px; overflow-x: auto; padding: 22px 2px 10px; margin-top: 18px; scrollbar-width: thin; scrollbar-color: #333 transparent; }
+  .strip img { flex: 0 0 auto; width: 118px; aspect-ratio: 2/3; object-fit: cover; border-radius: 10px; background: var(--panel);
+               border: 1px solid var(--line); }
+
+  section { margin-top: 44px; }
+  section h2 { font-size: 24px; margin: 0 0 6px; }
+  section .sub { color: var(--muted); margin: 0 0 18px; font-size: 15px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .row { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .row b { display: block; font-weight: 600; }
+  .row span { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .row .count { margin-top: 10px; font-size: 13px; color: var(--pink); }
+
+  footer { margin: 64px 0 0; padding: 32px 0 48px; border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
+  footer h2 { font-size: 20px; margin: 0 0 12px; }
+  footer p { margin: 0 0 12px; max-width: 720px; }
+  footer a { color: var(--pink); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  .fine { font-size: 13px; opacity: .8; }
+
+  @media (max-width: 600px) {
+    header.hero { grid-template-columns: 1fr; gap: 18px; padding-top: 36px; }
+    .hero img { width: 88px; height: 88px; border-radius: 22px; }
+    .btn { width: 100%; justify-content: center; }
+    .strip img { width: 96px; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>Vuniper</h1>
-  <p>Two movie rows for Stremio, refreshed every 6 hours.</p>
-  <ul>
-    <li><b>Now Online</b><span>Films that have just landed on digital</span></li>
-    <li><b>Hidden Gems</b><span>Under-the-radar picks</span></li>
-  </ul>
-  <a class="btn" id="install" href="#">Install in Stremio</a>
-  <p class="small">Button not working? In Stremio, open Add-ons and paste this into the search bar:
-    <code id="url"></code></p>
-</main>
+<div class="wrap">
+
+  <header class="hero">
+    <img src="logo.png" alt="">
+    <div>
+      <h1 class="neon">Vuniper for Stremio</h1>
+      <p>What's new to watch, straight from Vuniper's lists, right inside Stremio. Six movie rows and three show rows, refreshed every 6 hours.</p>
+    </div>
+  </header>
+
+  <div class="install">
+    <a class="btn" id="install" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M6 10l6 6 6-6M5 20h14"/></svg>
+      Install in Stremio
+    </a>
+    <span class="manual">Works on desktop, mobile and TV.</span>
+  </div>
+  <div class="copy">
+    <code id="url"></code>
+    <button id="copyBtn" type="button">Copy</button>
+  </div>
+  <p class="manual" style="margin-top:8px">If the button doesn't open Stremio, paste this link into the search bar on Stremio's Add-ons page.</p>
+
+  <div class="strip" id="strip" aria-label="Recently online"></div>
+
+  <section>
+    <h2 class="neon">Movies</h2>
+    <p class="sub">Each row covers roughly the last six months (or the next six, for upcoming).</p>
+    <div class="grid">
+      <div class="row" data-cat="movie/vuniper-now-online"><b>Now Online</b><span>Just landed on digital</span><div class="count"></div></div>
+      <div class="row" data-cat="movie/vuniper-hidden-gems"><b>Hidden Gems</b><span>Under-the-radar picks worth finding</span><div class="count"></div></div>
+      <div class="row" data-cat="movie/vuniper-upcoming"><b>Upcoming Movies</b><span>Release dates coming up</span><div class="count"></div></div>
+      <div class="row" data-cat="movie/vuniper-theaters"><b>In Theaters</b><span>Playing in cinemas now</span><div class="count"></div></div>
+      <div class="row" data-cat="movie/vuniper-popular"><b>Popular Online</b><span>What everyone's streaming</span><div class="count"></div></div>
+      <div class="row" data-cat="movie/vuniper-bluray"><b>New on Blu-ray</b><span>Fresh physical releases</span><div class="count"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="neon">Shows</h2>
+    <p class="sub">These appear under Series in Stremio.</p>
+    <div class="grid">
+      <div class="row" data-cat="series/vuniper-shows-new"><b>New Shows &amp; Seasons</b><span>Premieres and returning seasons</span><div class="count"></div></div>
+      <div class="row" data-cat="series/vuniper-shows-upcoming"><b>Upcoming</b><span>Seasons on the way</span><div class="count"></div></div>
+      <div class="row" data-cat="series/vuniper-shows-popular"><b>Popular Now</b><span>The shows people can't stop watching</span><div class="count"></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <h2 class="neon">What this is</h2>
+    <p>An unofficial, fan-made Stremio add-on. It adds catalog rows only: titles, posters and details, so you can find something to watch. It doesn't host or provide any streams. Every 6 hours it checks Vuniper's lists and saves them here, so installing it adds no extra load on Vuniper however many people use it.</p>
+    <p>All the curation is thanks to <a href="https://vuniper.com" target="_blank" rel="noopener">Vuniper</a>, a brilliant site for keeping up with new movie, show and game releases. If you find this useful, go and use the real thing too and show them some love. This project isn't affiliated with or endorsed by Vuniper.</p>
+    <p class="fine">Posters and artwork via Stremio's metadata service. Made with care by <a href="https://github.com/momoneymoproblemo/vuniper-stremio" target="_blank" rel="noopener">momoneymoproblemo</a>.</p>
+  </footer>
+</div>
+
 <script>
-  const base = location.href.replace(/[^/]*$/, '');
+  const base = location.href.split(/[?#]/)[0].replace(/[^/]*$/, '');
   const manifest = base + 'manifest.json';
   document.getElementById('url').textContent = manifest;
   document.getElementById('install').href = manifest.replace(/^https?:\/\//, 'stremio://');
+
+  document.getElementById('copyBtn').addEventListener('click', async (e) => {
+    try { await navigator.clipboard.writeText(manifest); e.target.textContent = 'Copied'; }
+    catch (_) { e.target.textContent = 'Select & copy'; }
+    setTimeout(() => (e.target.textContent = 'Copy'), 1800);
+  });
+
+  // Live counts per row, plus a poster strip from Now Online.
+  document.querySelectorAll('.row[data-cat]').forEach(async (row) => {
+    try {
+      const r = await fetch(base + 'catalog/' + row.dataset.cat + '.json', { cache: 'no-store' });
+      const { metas } = await r.json();
+      let total = metas.length;
+      for (let skip = 100; metas.length === 100 && total === skip; skip += 100) {
+        const more = await (await fetch(base + 'catalog/' + row.dataset.cat + '/skip=' + skip + '.json', { cache: 'no-store' })).json();
+        total += more.metas.length;
+      }
+      row.querySelector('.count').textContent = total + ' titles';
+      if (row.dataset.cat === 'movie/vuniper-now-online') {
+        const strip = document.getElementById('strip');
+        metas.slice(0, 14).forEach((m) => {
+          const img = document.createElement('img');
+          img.src = m.poster; img.alt = m.name; img.title = m.name; img.loading = 'lazy';
+          img.onerror = () => img.remove();
+          strip.appendChild(img);
+        });
+      }
+    } catch (_) { /* counts are a nice-to-have */ }
+  });
 </script>
 </body>
 </html>
